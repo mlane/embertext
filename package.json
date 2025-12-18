@@ -2,7 +2,7 @@
   "dependencies": {
     "monaco-editor": "^0.55.1"
   },
-  "description": "Embertext is a minimal, readability-first code editor built on Monaco. No AI. No noise. Just clarity and intent.",
+  "description": "embertext is a minimal, readability-first code editor built on Monaco. No AI. No noise. Just clarity and intent.",
   "devDependencies": {
     "eslint": "^9.39.2",
     "prettier": "^3.7.4",
@@ -14,7 +14,9 @@
     "cyberpunk",
     "developer-tools",
     "editor",
+    "embertext",
     "minimal",
+    "mit",
     "monaco",
     "no-ai",
     "readability",
