@@ -1,5 +1,5 @@
 export const inferLanguage = (path: string): string => {
-  const extension = path?.split('.')?.pop() ?? 'plaintext'
+  const extension = path?.split?.('.')?.pop?.() ?? 'plaintext'
 
   if (extension === 'css') return 'css'
 
