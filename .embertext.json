@@ -1,5 +1,13 @@
 {
   "automaticLayout": true,
+  "excludeFromSearch": [
+    ".DS_Store",
+    ".git",
+    ".github",
+    "build",
+    "dist",
+    "node_modules"
+  ],
   "minimap": {
     "enabled": false
   },
