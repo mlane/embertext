@@ -33,6 +33,14 @@ ipcMain.handle('init', async (_, projectPath, excludeFromSearch = []) => {
   return paths
 })
 
+ipcMain.handle('selectProject', async () => {
+  const { dialog } = require('electron')
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+  })
+  return result.canceled ? null : result.filePaths[0]
+})
+
 ipcMain.handle('readFile', async (_, filePath) => {
   return fs.readFile(filePath, 'utf8')
 })
@@ -53,10 +61,6 @@ ipcMain.handle('reinit', async (_, projectPath, excludeFromSearch = []) => {
   return paths
 })
 
-ipcMain.handle('selectProject', async () => {
-  const { dialog } = require('electron')
-  const result = await dialog.showOpenDialog({
-    properties: ['openDirectory'],
-  })
-  return result.canceled ? null : result.filePaths[0]
+ipcMain.handle('writeFile', async (_, filePath, content) => {
+  return fs.writeFile(filePath, content)
 })

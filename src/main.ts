@@ -4,9 +4,10 @@ import './style.css'
 import { inferLanguage, loadConfigs } from './utils'
 console.log('how many times')
 const onboardingElement = document.getElementById('onboarding')
-const resultsElement = document.getElementById('results')
 const rootElement = document.getElementById('root')
 const searchElement = document.getElementById('search')
+const searchInputElement = searchElement?.querySelector('input')
+const searchListboxElement = searchElement?.querySelector('ul')
 
 /**
  * @todo
@@ -14,22 +15,33 @@ const searchElement = document.getElementById('search')
  * find a way to confirm if a project has more then  10 folders (async task that only touches directories nothing more and just looks for the depth)
  */
 
-if (!onboardingElement) throw new Error('OnboardingElement element not found')
+if (!onboardingElement) throw new Error('Onboarding element not found')
 
-if (!resultsElement) throw new Error('Results element not found')
+if (!rootElement) throw new Error('Root element not found')
 
-if (!rootElement) throw new Error('RootElement element not found')
+if (!searchInputElement) throw new Error('Search element not found')
 
-if (!searchElement) throw new Error('SearchElement element not found')
+if (!searchListboxElement) throw new Error('Search listbox element not found')
 
 const config = await loadConfigs()
-let results: string[] = []
+
+let path = ''
+
 let resultIndex: number = 0
+
+let results: string[] = []
+
 let tree: string[] = []
 
-const { language, model, uri, value, ...userOptions } = config ?? {}
+const {
+  language: configLanguage,
+  model: configModel,
+  uri: configUri,
+  value: configValue,
+  ...userOptions
+} = config ?? {}
 
-if (language || model || uri || value) {
+if (configLanguage || configModel || configUri || configValue) {
   console.warn(
     'embertext configuration cannot contain model, language, uri, or value'
   )
@@ -37,18 +49,27 @@ if (language || model || uri || value) {
 
 monaco.typescript.typescriptDefaults.setCompilerOptions({
   jsx: monaco.typescript.JsxEmit.ReactJSX,
-  target: monaco.typescript.ScriptTarget.ESNext,
   module: monaco.typescript.ModuleKind.ESNext,
+  target: monaco.typescript.ScriptTarget.ESNext,
 })
+
 monaco.typescript.typescriptDefaults.setDiagnosticsOptions({
   noSemanticValidation: true,
 })
+
 const projectPath = localStorage.getItem('projectPath')
+
 const editor = monaco.editor.create(rootElement, {
   ...userOptions,
   colorDecorators: false,
   folding: false,
-  readOnly: !projectPath,
+  readOnly: !path || !projectPath,
+})
+
+const model = editor.getModel()
+
+model?.onDidChangeContent(event => {
+  console.log('event', event)
 })
 
 if (!projectPath) {
@@ -65,10 +86,10 @@ if (!projectPath) {
   )
 }
 
-console.log('tree', tree)
+console.log('path', path)
 
 /** @todo replace with input event and use keydown for file selection */
-searchElement.addEventListener('keydown', async (event: KeyboardEvent) => {
+searchInputElement.addEventListener('keydown', async (event: KeyboardEvent) => {
   try {
     const { ctrlKey, metaKey, key } = event ?? {}
     console.log(results, resultIndex)
@@ -101,48 +122,56 @@ searchElement.addEventListener('keydown', async (event: KeyboardEvent) => {
       return
     }
 
+    /** @todo will clean this up and support directories later but not now */
     if (key === 'Enter') {
       event.preventDefault()
-      onSelectResult(resultIndex)
+      path = results?.[resultIndex]?.endsWith('/')
+        ? (tree?.find(file => !file?.endsWith('/')) ?? tree?.[0])
+        : (results?.[resultIndex] ?? '')
+      console.log('path-enter', path)
+
+      /** #todo not sure if this will work */
+      if (path) {
+        editor.updateOptions({
+          readOnly: false,
+        })
+      } else {
+        editor.setModel(null)
+      }
+
+      const file = await window.embertext.readFile(path)
+      console.log('path', path, tree)
+      const uri = monaco.Uri.parse(`file://${path}`)
+      const language = inferLanguage(path)
+      let model = monaco.editor.getModel(uri)
+
+      if (!model) {
+        model = monaco.editor.createModel(file, language, uri)
+      }
+
+      editor.setModel(model)
       return
     }
-
-    onSearch((event?.target as HTMLInputElement)?.value)
   } catch (error) {
     console.error(error)
   }
 })
 
 /** @todo not even close to PoC just trying to get the flow operational (debounce) */
-const onSearch = (searchElement: string) => {
-  console.log('searchElement', searchElement)
-  resultIndex = 0
-  results = [...tree]?.slice(0, 5) ?? []
-  resultsElement.innerHTML =
-    results?.map(result => `<li>${result}</li>`)?.join('') ?? ''
-}
+searchInputElement.addEventListener('input', event => {
+  const value = (event?.target as HTMLInputElement)?.value?.trim() ?? ''
+  console.log('value', value)
 
-/** @todo will clean this up and support directories later but not now */
-const onSelectResult = async (resultIndex: number) => {
-  const path = results?.[resultIndex]?.endsWith('/')
-    ? (tree?.find(file => !file?.endsWith('/')) ?? tree?.[0])
-    : (results?.[resultIndex] ?? '')
-
-  /** #todo not sure if this will work */
-  if (!path) editor.setModel(null)
-
-  const file = await window.embertext.readFile(path)
-  console.log('path', path, tree)
-  const uri = monaco.Uri.parse(`file://${path}`)
-  const language = inferLanguage(path)
-  let model = monaco.editor.getModel(uri)
-
-  if (!model) {
-    model = monaco.editor.createModel(file, language, uri)
+  if (value) {
+    results = [...tree]?.slice(0, 5) ?? []
+  } else {
+    results = []
   }
 
-  editor.setModel(model)
-}
+  resultIndex = 0
+  searchListboxElement.innerHTML =
+    results?.map(result => `<li>${result}</li>`)?.join('') ?? ''
+})
 
 const onSelectProject = async (projectPath: string) => {
   console.log('onSelectProject', projectPath)
@@ -151,7 +180,7 @@ const onSelectProject = async (projectPath: string) => {
 
   localStorage.setItem('projectPath', projectPath)
   results = []
-  resultsElement.innerHTML = ''
+  searchListboxElement.innerHTML = ''
   resultIndex = 0
   tree = await window.embertext.init(
     projectPath,

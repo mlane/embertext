@@ -10,6 +10,7 @@ declare global {
         excludeFromSearch: string[]
       ): Promise<string[]>
       selectProject(): Promise<string>
+      writeFile(path: string, content: string): Promise<void>
     }
   }
 }
