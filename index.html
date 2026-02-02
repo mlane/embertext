@@ -3,11 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>embertext</title>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
+    <header>
+      <div id="search" class="relative py-5 bg-[#FF0000] c-blue-100">
+        <input
+          id="search-input"
+          aria-autocomplete="list"
+          aria-controls="search-listbox"
+          aria-expanded="false"
+          placeholder="Search45..."
+          role="combobox"
+          type="text"
+        />
+        <ul id="search-listbox" role="listbox" />
+      </div>
+    </header>
     <div id="root"></div>
+    <div id="onboarding">
+      <h1>Welcome to embertext</h1>
+      <p>
+        embertext is a minimal, readability-first code editor. No AI. No noise.
+        Just clarity and intent.
+      </p>
+      <button id="onboarding-button">Open Project</button>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
